@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 
-from data.fetch_events import fetch_day_ahead, fetch_events_last24h
+from data.fetch_events import fetch_day_ahead
 from data.fetch_global_markets import fetch_all_markets
 from data.fetch_premarket import fetch_premarket
 from data.send_email import send_report
@@ -106,7 +106,7 @@ def arrow(val) -> str:
 # Claude narrative generation
 # ---------------------------------------------------------------------------
 
-def call_claude(market_rows: list[dict], api_key: str, key_events: list[dict] | None = None) -> dict:
+def call_claude(market_rows: list[dict], api_key: str) -> dict:
     """
     Call Claude Haiku to generate Morning Brief and Positioning Tips.
     Returns dict with 'morning_brief' and 'positioning_tips' keys.
@@ -118,22 +118,10 @@ def call_claude(market_rows: list[dict], api_key: str, key_events: list[dict] | 
         lines.append(f"  - {row['name']} ({row['symbol']}): {fmt_close(row['close'])} ({pct})")
     market_summary = "\n".join(lines)
 
-    # Optionally include recent economic events
-    events_block = ""
-    if key_events:
-        ev_lines = []
-        for ev in key_events[:6]:  # cap at 6 to keep prompt compact
-            ev_lines.append(
-                f"  - {ev['event']} ({ev['country']}): "
-                f"Actual {ev['actual_str']} | Est {ev['estimate_str']} | Prev {ev['prev_str']}"
-            )
-        if ev_lines:
-            events_block = "\nKey economic releases (last 24h):\n" + "\n".join(ev_lines)
-
     prompt = f"""You are a concise financial analyst writing a pre-market briefing for serious US traders.
 
 Yesterday's market closes:
-{market_summary}{events_block}
+{market_summary}
 
 Write two sections:
 
@@ -317,20 +305,18 @@ def main():
         logger.warning(f"Pre-market fetch failed: {e}")
         premarket_rows = []
 
-    # Fetch economic events (Finnhub — optional)
-    key_events: list[dict] = []
-    day_ahead: dict = {"events": [], "earnings": []}
+    # Fetch earnings calendar (Finnhub — optional)
+    day_ahead: dict = {"earnings": []}
     if fh_key:
-        logger.info("Fetching economic events from Finnhub...")
-        key_events = fetch_events_last24h(fh_key, now_eastern)
+        logger.info("Fetching earnings calendar from Finnhub...")
         day_ahead = fetch_day_ahead(fh_key, now_eastern.date())
     else:
-        logger.debug("FINNHUB_API_KEY not set — skipping events sections")
+        logger.debug("FINNHUB_API_KEY not set — skipping earnings section")
 
-    # Generate Claude narrative (pass events for richer morning brief)
+    # Generate Claude narrative
     logger.info("Generating narrative with Claude Haiku...")
     try:
-        claude_out = call_claude(raw_rows, anthropic_key, key_events=key_events)
+        claude_out = call_claude(raw_rows, anthropic_key)
         morning_brief = claude_out["morning_brief"]
         positioning_tips = claude_out["positioning_tips"]
     except Exception as e:
@@ -353,7 +339,6 @@ def main():
         "market_rows": market_rows,
         "asia_rows": asia_rows,
         "premarket_rows": premarket_rows,
-        "key_events": key_events,
         "day_ahead": day_ahead,
         "morning_brief": morning_brief,
         "positioning_tips": positioning_tips,

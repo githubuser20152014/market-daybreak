@@ -242,47 +242,8 @@ td {
     <p class="stub">Pre-market data unavailable.</p>
     {% endif %}
 
-    <h2>Key Events &mdash; Last 24h</h2>
-    {% if key_events %}
-    {% for ev in key_events %}
-    <p style="margin-bottom:2px;">
-      <strong>{{ ev.time_str }}</strong> &mdash; <strong>{{ ev.event }}</strong>
-      <span style="font-size:8pt;color:#666666;">({{ ev.country }}, {{ ev.impact }})</span>
-    </p>
-    {% if ev.actual is not none %}
-    <p style="font-style:italic;color:#555555;font-size:8.5pt;margin-top:1px;margin-bottom:10px;">
-      Actual: {{ ev.actual_str }} &nbsp;|&nbsp; Est: {{ ev.estimate_str }} &nbsp;|&nbsp; Prev: {{ ev.prev_str }}
-    </p>
-    {% else %}
-    <p style="margin-bottom:10px;"></p>
-    {% endif %}
-    {% endfor %}
-    {% else %}
-    <p class="stub">No major economic events in the last 24h.</p>
-    {% endif %}
-
-    <h2>Day Ahead</h2>
-    {% if day_ahead.events %}
-    <table>
-      <thead>
-        <tr><th>Time</th><th>Event</th><th>Country</th><th>Impact</th></tr>
-      </thead>
-      <tbody>
-        {% for ev in day_ahead.events %}
-        <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
-          <td>{{ ev.time_str }}</td>
-          <td>{{ ev.event }}</td>
-          <td>{{ ev.country }}</td>
-          <td>{{ ev.impact }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="stub">No major economic events scheduled today.</p>
-    {% endif %}
+    <h2>Earnings Today</h2>
     {% if day_ahead.earnings %}
-    <p style="font-weight:bold;font-size:9.5pt;margin-top:12px;margin-bottom:4px;">Earnings Today</p>
     <table>
       <thead>
         <tr><th>Symbol</th><th class="num">EPS Est.</th><th class="num">Revenue Est.</th><th>When</th></tr>
@@ -298,6 +259,8 @@ td {
         {% endfor %}
       </tbody>
     </table>
+    {% else %}
+    <p class="stub">No earnings scheduled today.</p>
     {% endif %}
 
     <h2>Positioning Tips</h2>
