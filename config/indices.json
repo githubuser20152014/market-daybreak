@@ -1,0 +1,7 @@
+[
+  {"name": "S&P 500",   "symbol": "SPY", "group": "US"},
+  {"name": "Dow Jones", "symbol": "DIA", "group": "US"},
+  {"name": "Nasdaq",    "symbol": "QQQ", "group": "US"},
+  {"name": "DAX",       "symbol": "EWG", "group": "Europe"},
+  {"name": "Nikkei",    "symbol": "EWJ", "group": "Asia"}
+]

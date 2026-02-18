@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+
+@page {
+    size: letter;
+    margin: 0;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #222222;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+}
+
+/* ── Header band ── */
+.header-band {
+    background-color: #1B2A4A;
+    text-align: center;
+    padding: 22pt 44pt 16pt 44pt;
+}
+.header-title {
+    font-size: 22pt;
+    font-weight: bold;
+    color: #ffffff;
+    margin: 0 0 5pt 0;
+    padding: 0;
+    letter-spacing: 0.5pt;
+}
+.header-subtitle {
+    font-size: 10.5pt;
+    font-style: italic;
+    color: #A0B8D0;
+    margin: 0 0 5pt 0;
+}
+.header-dateline {
+    font-size: 8.5pt;
+    color: #6A90AE;
+}
+
+/* ── Teal accent bar under header ── */
+.accent-bar {
+    background-color: #3AB5C4;
+    height: 3pt;
+}
+
+/* ── Body content ── */
+.content {
+    padding: 18pt 44pt 28pt 44pt;
+}
+
+/* ── Section headings ── */
+h2 {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1B2A4A;
+    border-bottom: 2.5pt solid #3AB5C4;
+    padding-bottom: 3pt;
+    margin-top: 20pt;
+    margin-bottom: 9pt;
+}
+
+/* ── Body text ── */
+p {
+    font-size: 9.5pt;
+    line-height: 1.55;
+    text-align: justify;
+    margin: 0 0 6pt 0;
+    color: #222222;
+}
+.stub {
+    font-style: italic;
+    color: #888888;
+}
+
+/* ── Divider ── */
+hr {
+    border: none;
+    border-top: 0.5pt solid #dddddd;
+    margin: 12pt 0;
+}
+
+/* ── Tables (market snapshot + positioning tips) ── */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8pt 0 14pt 0;
+    font-size: 9pt;
+}
+th {
+    background-color: #1B2A4A;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 6pt 8pt;
+    text-align: left;
+}
+td {
+    padding: 4.5pt 8pt;
+    color: #222222;
+}
+.row-odd  { background-color: #ffffff; }
+.row-even { background-color: #EDF2F7; }
+.num { text-align: right; }
+.sym {
+    color: #7A8899;
+    font-size: 8.5pt;
+}
+
+/* ── Change / % change colors ── */
+.positive { color: #27AE60; font-weight: bold; }
+.negative { color: #C0392B; font-weight: bold; }
+
+/* ── Footer ── */
+.footer {
+    margin-top: 26pt;
+    padding-top: 7pt;
+    border-top: 0.5pt solid #cccccc;
+    text-align: center;
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #999999;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     HEADER BAND
+════════════════════════════════════════════════ -->
+<div class="header-band">
+  <div class="header-title">Framework Foundry &mdash; Daybreak Edition</div>
+  <div class="header-subtitle">Research for the serious investor</div>
+  <div class="header-dateline">
+    {{ report_date }} &nbsp;&middot;&nbsp; Generated {{ generated_at }} EST{% if run_at_flag %} &nbsp;(simulated {{ run_at_flag }} EST){% endif %}
+  </div>
+</div>
+<div class="accent-bar"></div>
+
+<!-- ════════════════════════════════════════════════
+     BODY CONTENT
+════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- 1. Morning Brief -->
+  <h2>The Morning Brief</h2>
+  {% for para in morning_brief_paras %}
+  <p>{{ para }}</p>
+  {% endfor %}
+
+  <!-- 2. Global Markets Table -->
+  <h2>Global Markets &mdash; Yesterday&#39;s Close ({{ trade_date }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Index</th>
+        <th class="num">Close</th>
+        <th class="num">Change</th>
+        <th class="num">% Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in market_rows %}
+      <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
+        <td>{{ row.name }} <span class="sym">({{ row.symbol }})</span></td>
+        <td class="num">{{ row.close_fmt }}</td>
+        <td class="num
+          {%- if row.change is not none %} {{ 'positive' if row.change >= 0 else 'negative' }}{% endif %}">
+          {{ row.change_fmt }}
+        </td>
+        <td class="num
+          {%- if row.pct_change is not none %} {{ 'positive' if row.pct_change >= 0 else 'negative' }}{% endif %}">
+          {{ row.pct_fmt }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 3. Asia Overnight -->
+  <h2>Asia Overnight</h2>
+  <p class="stub">Live data coming soon.</p>
+
+  <!-- 4. US Pre-Market -->
+  <h2>US Pre-Market</h2>
+  <p class="stub">Live data coming soon.</p>
+
+  <!-- 5. Key Events Last 24h -->
+  <h2>Key Events &mdash; Last 24h</h2>
+  <p class="stub">Live data coming soon.</p>
+
+  <!-- 6. Day Ahead -->
+  <h2>Day Ahead</h2>
+  <p class="stub">Live data coming soon.</p>
+
+  <!-- 7. Positioning Tips -->
+  <h2>Positioning Tips</h2>
+  {{ positioning_tips_html | safe }}
+
+  <!-- Footer -->
+  <div class="footer">
+    For informational purposes only. Not investment advice. Past performance is not indicative of future results.
+  </div>
+
+</div>
+</body>
+</html>

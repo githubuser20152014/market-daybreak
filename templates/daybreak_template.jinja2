@@ -1,0 +1,53 @@
+# Framework Foundry — Daybreak Edition
+### Research for the Serious Investor
+**{{ report_date }}** | Generated {{ generated_at }} EST{% if run_at_flag %} (simulated {{ run_at_flag }} EST){% endif %}
+
+---
+
+## 1. The Morning Brief
+
+{{ morning_brief }}
+
+---
+
+## 2. Global Markets — Yesterday's Close ({{ trade_date }})
+
+| Index | Close | Change | % Change |
+| --- | --- | --- | --- |
+{% for row in market_rows -%}
+| {{ row.name }} ({{ row.symbol }}) | {{ row.close_fmt }} | {{ row.arrow }} {{ row.change_fmt }} | {{ row.pct_fmt }} |
+{% endfor %}
+
+---
+
+## 3. Asia Overnight
+
+*Live data coming soon.*
+
+---
+
+## 4. US Pre-Market
+
+*Live data coming soon.*
+
+---
+
+## 5. Key Events — Last 24h
+
+*Live data coming soon.*
+
+---
+
+## 6. Day Ahead
+
+*Live data coming soon.*
+
+---
+
+## 7. Positioning Tips
+
+{{ positioning_tips }}
+
+---
+
+*For informational purposes only. Not investment advice. Past performance is not indicative of future results.*
