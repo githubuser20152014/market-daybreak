@@ -23,6 +23,7 @@ from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 
 from data.fetch_global_markets import fetch_all_markets
+from data.send_email import send_report
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -215,6 +216,26 @@ def render_pdf(context: dict, output_path: Path) -> None:
         raise RuntimeError(f"PDF generation failed ({result.err} errors)")
 
 
+def render_email_html(context: dict) -> str:
+    """Render the email HTML body using the email-optimised Jinja2 template."""
+    morning_brief_paras = [
+        p.strip() for p in context["morning_brief"].split("\n\n") if p.strip()
+    ]
+    converter = md_lib.Markdown(extensions=["tables"])
+    positioning_tips_html = converter.convert(context["positioning_tips"])
+
+    email_context = {
+        **context,
+        "morning_brief_paras": morning_brief_paras,
+        "positioning_tips_html": positioning_tips_html,
+    }
+    env = Environment(
+        loader=FileSystemLoader(str(BASE_DIR / "templates")),
+        keep_trailing_newline=True,
+    )
+    return env.get_template("daybreak_email.html").render(**email_context)
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -321,6 +342,29 @@ def main():
 
         print(f"Markdown: {md_file}")
         print(f"PDF:      {pdf_file}")
+
+        # Email delivery — fires only when SendGrid env vars are present
+        sg_key = os.getenv("SENDGRID_API_KEY")
+        email_from = os.getenv("EMAIL_FROM")
+        email_to_raw = os.getenv("EMAIL_TO")
+        if sg_key and email_from and email_to_raw:
+            to_list = [e.strip() for e in email_to_raw.split(",") if e.strip()]
+            logger.info(f"Sending email to: {', '.join(to_list)}")
+            try:
+                html_body = render_email_html(context)
+                send_report(
+                    sg_api_key=sg_key,
+                    from_email=email_from,
+                    to_emails=to_list,
+                    report_date=context["report_date"],
+                    html_body=html_body,
+                    pdf_path=pdf_file,
+                )
+                print(f"Email:    sent to {', '.join(to_list)}")
+            except Exception as e:
+                logger.warning(f"Email failed: {e} — report still saved locally")
+        else:
+            logger.debug("Email skipped — SENDGRID_API_KEY / EMAIL_FROM / EMAIL_TO not set")
 
 
 if __name__ == "__main__":
