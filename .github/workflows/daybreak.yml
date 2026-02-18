@@ -1,0 +1,35 @@
+name: Daybreak Report
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'  # 07:00 EST (UTC noon) on weekdays
+  workflow_dispatch:          # Allow manual trigger from Actions tab
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate report
+        env:
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python generate_daybreak.py
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybreak-${{ github.run_id }}
+          path: output/daybreak_*
+          retention-days: 90
