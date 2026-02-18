@@ -22,25 +22,68 @@
 
 ## 3. Asia Overnight
 
-*Live data coming soon.*
+*Most recent overnight close — Asian markets finish before 4 AM EST.*
+
+| Index | Close | Change | % Change |
+| --- | --- | --- | --- |
+{% for row in asia_rows -%}
+| {{ row.name }} ({{ row.symbol }}) | {{ row.close_fmt }} | {{ row.arrow }} {{ row.change_fmt }} | {{ row.pct_fmt }} |
+{% endfor %}
 
 ---
 
 ## 4. US Pre-Market
 
-*Live data coming soon.*
+{% if premarket_rows and premarket_rows | selectattr('close') | list %}
+| Symbol | Latest Price | Change | % Change |
+| --- | --- | --- | --- |
+{% for row in premarket_rows -%}
+| {{ row.name }} ({{ row.symbol }}) | {{ row.close_fmt }} | {{ row.arrow }} {{ row.change_fmt }} | {{ row.pct_fmt }} |
+{% endfor %}
+{% else %}
+*Pre-market data unavailable.*
+{% endif %}
 
 ---
 
 ## 5. Key Events — Last 24h
 
-*Live data coming soon.*
+{% if key_events %}
+{% for ev in key_events %}
+**{{ ev.time_str }}** — **{{ ev.event }}** ({{ ev.country }}, {{ ev.impact }})
+{% if ev.actual is not none %}
+*Actual: {{ ev.actual_str }}  |  Est: {{ ev.estimate_str }}  |  Prev: {{ ev.prev_str }}*
+{% endif %}
+
+{% endfor %}
+{% else %}
+*No major economic events in the last 24h.*
+{% endif %}
 
 ---
 
 ## 6. Day Ahead
 
-*Live data coming soon.*
+{% if day_ahead.events %}
+| Time | Event | Country | Impact |
+| --- | --- | --- | --- |
+{% for ev in day_ahead.events -%}
+| {{ ev.time_str }} | {{ ev.event }} | {{ ev.country }} | {{ ev.impact }} |
+{% endfor %}
+
+{% else %}
+*No major economic events scheduled today.*
+{% endif %}
+{% if day_ahead.earnings %}
+**Earnings Today:**
+
+| Symbol | EPS Est. | Revenue Est. | When |
+| --- | --- | --- | --- |
+{% for e in day_ahead.earnings -%}
+| {{ e.symbol }} | {{ e.eps_str }} | {{ e.rev_str }} | {{ e.when }} |
+{% endfor %}
+
+{% endif %}
 
 ---
 

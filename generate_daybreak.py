@@ -22,7 +22,9 @@ from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
 
+from data.fetch_events import fetch_day_ahead, fetch_events_last24h
 from data.fetch_global_markets import fetch_all_markets
+from data.fetch_premarket import fetch_premarket
 from data.send_email import send_report
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -104,7 +106,7 @@ def arrow(val) -> str:
 # Claude narrative generation
 # ---------------------------------------------------------------------------
 
-def call_claude(market_rows: list[dict], api_key: str) -> dict:
+def call_claude(market_rows: list[dict], api_key: str, key_events: list[dict] | None = None) -> dict:
     """
     Call Claude Haiku to generate Morning Brief and Positioning Tips.
     Returns dict with 'morning_brief' and 'positioning_tips' keys.
@@ -116,10 +118,22 @@ def call_claude(market_rows: list[dict], api_key: str) -> dict:
         lines.append(f"  - {row['name']} ({row['symbol']}): {fmt_close(row['close'])} ({pct})")
     market_summary = "\n".join(lines)
 
+    # Optionally include recent economic events
+    events_block = ""
+    if key_events:
+        ev_lines = []
+        for ev in key_events[:6]:  # cap at 6 to keep prompt compact
+            ev_lines.append(
+                f"  - {ev['event']} ({ev['country']}): "
+                f"Actual {ev['actual_str']} | Est {ev['estimate_str']} | Prev {ev['prev_str']}"
+            )
+        if ev_lines:
+            events_block = "\nKey economic releases (last 24h):\n" + "\n".join(ev_lines)
+
     prompt = f"""You are a concise financial analyst writing a pre-market briefing for serious US traders.
 
 Yesterday's market closes:
-{market_summary}
+{market_summary}{events_block}
 
 Write two sections:
 
@@ -247,6 +261,8 @@ def main():
     av_key = os.getenv("ALPHAVANTAGE_API_KEY")
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
 
+    fh_key = os.getenv("FINNHUB_API_KEY")
+
     missing = []
     if not av_key:
         missing.append("ALPHAVANTAGE_API_KEY")
@@ -285,15 +301,36 @@ def main():
     with open(config_path) as f:
         indices = json.load(f)
 
-    # Fetch market data
+    # Fetch market data (prior trading day closes for all indices)
     logger.info(f"Fetching market data for {trade_date_str}...")
     raw_rows = fetch_all_markets(trade_date_str, av_key, indices)
     market_rows = build_market_rows(raw_rows)
 
-    # Generate Claude narrative
+    # Split market rows by region for template access
+    asia_rows = [r for r in market_rows if r["group"] == "Asia"]
+
+    # Fetch SPY/QQQ pre-market quotes
+    logger.info("Fetching pre-market quotes (SPY/QQQ)...")
+    try:
+        premarket_rows = fetch_premarket(av_key)
+    except Exception as e:
+        logger.warning(f"Pre-market fetch failed: {e}")
+        premarket_rows = []
+
+    # Fetch economic events (Finnhub — optional)
+    key_events: list[dict] = []
+    day_ahead: dict = {"events": [], "earnings": []}
+    if fh_key:
+        logger.info("Fetching economic events from Finnhub...")
+        key_events = fetch_events_last24h(fh_key, now_eastern)
+        day_ahead = fetch_day_ahead(fh_key, now_eastern.date())
+    else:
+        logger.debug("FINNHUB_API_KEY not set — skipping events sections")
+
+    # Generate Claude narrative (pass events for richer morning brief)
     logger.info("Generating narrative with Claude Haiku...")
     try:
-        claude_out = call_claude(raw_rows, anthropic_key)
+        claude_out = call_claude(raw_rows, anthropic_key, key_events=key_events)
         morning_brief = claude_out["morning_brief"]
         positioning_tips = claude_out["positioning_tips"]
     except Exception as e:
@@ -314,6 +351,10 @@ def main():
         "generated_at": generated_at,
         "run_at_flag": args.run_at,
         "market_rows": market_rows,
+        "asia_rows": asia_rows,
+        "premarket_rows": premarket_rows,
+        "key_events": key_events,
+        "day_ahead": day_ahead,
         "morning_brief": morning_brief,
         "positioning_tips": positioning_tips,
     }

@@ -1,7 +1,13 @@
 [
-  {"name": "S&P 500",   "symbol": "SPY", "group": "US"},
-  {"name": "Dow Jones", "symbol": "DIA", "group": "US"},
-  {"name": "Nasdaq",    "symbol": "QQQ", "group": "US"},
-  {"name": "DAX",       "symbol": "EWG", "group": "Europe"},
-  {"name": "Nikkei",    "symbol": "EWJ", "group": "Asia"}
+  {"name": "S&P 500",      "symbol": "SPY",  "group": "US"},
+  {"name": "Dow Jones",    "symbol": "DIA",  "group": "US"},
+  {"name": "Nasdaq 100",   "symbol": "QQQ",  "group": "US"},
+  {"name": "DAX",          "symbol": "EWG",  "group": "Europe"},
+  {"name": "FTSE 100",     "symbol": "EWU",  "group": "Europe"},
+  {"name": "CAC 40",       "symbol": "EWQ",  "group": "Europe"},
+  {"name": "Euro Stoxx 50","symbol": "FEZ",  "group": "Europe"},
+  {"name": "Nikkei 225",   "symbol": "EWJ",  "group": "Asia"},
+  {"name": "Hang Seng",    "symbol": "EWH",  "group": "Asia"},
+  {"name": "Shanghai",     "symbol": "MCHI", "group": "Asia"},
+  {"name": "Kospi",        "symbol": "EWY",  "group": "Asia"}
 ]

@@ -105,6 +105,15 @@ td {
 }
 .row-odd  { background-color: #ffffff; }
 .row-even { background-color: #EDF2F7; }
+.row-group td {
+    background-color: #E8F0F7;
+    color: #1B2A4A;
+    font-weight: bold;
+    font-size: 7.5pt;
+    padding: 3pt 8pt;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+}
 .num { text-align: right; }
 .sym {
     color: #7A8899;
@@ -165,7 +174,12 @@ td {
       </tr>
     </thead>
     <tbody>
+      {% set ns = namespace(last_group='') %}
       {% for row in market_rows %}
+      {% if row.group != ns.last_group %}
+      {% set ns.last_group = row.group %}
+      <tr class="row-group"><td colspan="4">{{ row.group }}</td></tr>
+      {% endif %}
       <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
         <td>{{ row.name }} <span class="sym">({{ row.symbol }})</span></td>
         <td class="num">{{ row.close_fmt }}</td>
@@ -184,19 +198,114 @@ td {
 
   <!-- 3. Asia Overnight -->
   <h2>Asia Overnight</h2>
-  <p class="stub">Live data coming soon.</p>
+  <p style="font-size:8.5pt;color:#666666;margin-bottom:6pt;">Most recent overnight close &mdash; Asian markets finish before 4 AM EST.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Index</th>
+        <th class="num">Close</th>
+        <th class="num">Change</th>
+        <th class="num">% Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in asia_rows %}
+      <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
+        <td>{{ row.name }} <span class="sym">({{ row.symbol }})</span></td>
+        <td class="num">{{ row.close_fmt }}</td>
+        <td class="num{%- if row.change is not none %} {{ 'positive' if row.change >= 0 else 'negative' }}{% endif %}">{{ row.change_fmt }}</td>
+        <td class="num{%- if row.pct_change is not none %} {{ 'positive' if row.pct_change >= 0 else 'negative' }}{% endif %}">{{ row.pct_fmt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
   <!-- 4. US Pre-Market -->
   <h2>US Pre-Market</h2>
-  <p class="stub">Live data coming soon.</p>
+  {% if premarket_rows and premarket_rows | selectattr('close') | list %}
+  <table>
+    <thead>
+      <tr>
+        <th>Symbol</th>
+        <th class="num">Latest Price</th>
+        <th class="num">Change</th>
+        <th class="num">% Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in premarket_rows %}
+      <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
+        <td>{{ row.name }} <span class="sym">({{ row.symbol }})</span></td>
+        <td class="num">{{ row.close_fmt }}</td>
+        <td class="num{%- if row.change is not none %} {{ 'positive' if row.change >= 0 else 'negative' }}{% endif %}">{{ row.change_fmt }}</td>
+        <td class="num{%- if row.pct_change is not none %} {{ 'positive' if row.pct_change >= 0 else 'negative' }}{% endif %}">{{ row.pct_fmt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="stub">Pre-market data unavailable.</p>
+  {% endif %}
 
   <!-- 5. Key Events Last 24h -->
   <h2>Key Events &mdash; Last 24h</h2>
-  <p class="stub">Live data coming soon.</p>
+  {% if key_events %}
+  {% for ev in key_events %}
+  <p style="margin-bottom:2pt;">
+    <strong>{{ ev.time_str }}</strong> &mdash; <strong>{{ ev.event }}</strong>
+    <span style="font-size:8pt;color:#666666;">({{ ev.country }}, {{ ev.impact }})</span>
+  </p>
+  {% if ev.actual is not none %}
+  <p style="font-style:italic;color:#555555;font-size:8.5pt;margin-top:1pt;margin-bottom:8pt;">
+    Actual: {{ ev.actual_str }} &nbsp;|&nbsp; Est: {{ ev.estimate_str }} &nbsp;|&nbsp; Prev: {{ ev.prev_str }}
+  </p>
+  {% else %}
+  <p style="margin-bottom:8pt;"></p>
+  {% endif %}
+  {% endfor %}
+  {% else %}
+  <p class="stub">No major economic events in the last 24h.</p>
+  {% endif %}
 
   <!-- 6. Day Ahead -->
   <h2>Day Ahead</h2>
-  <p class="stub">Live data coming soon.</p>
+  {% if day_ahead.events %}
+  <table>
+    <thead>
+      <tr><th>Time</th><th>Event</th><th>Country</th><th>Impact</th></tr>
+    </thead>
+    <tbody>
+      {% for ev in day_ahead.events %}
+      <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
+        <td>{{ ev.time_str }}</td>
+        <td>{{ ev.event }}</td>
+        <td>{{ ev.country }}</td>
+        <td>{{ ev.impact }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="stub">No major economic events scheduled today.</p>
+  {% endif %}
+  {% if day_ahead.earnings %}
+  <p style="font-weight:bold;font-size:9.5pt;margin-top:10pt;margin-bottom:4pt;">Earnings Today</p>
+  <table>
+    <thead>
+      <tr><th>Symbol</th><th class="num">EPS Est.</th><th class="num">Revenue Est.</th><th>When</th></tr>
+    </thead>
+    <tbody>
+      {% for e in day_ahead.earnings %}
+      <tr class="{{ 'row-even' if loop.index is even else 'row-odd' }}">
+        <td>{{ e.symbol }}</td>
+        <td class="num">{{ e.eps_str }}</td>
+        <td class="num">{{ e.rev_str }}</td>
+        <td>{{ e.when }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 
   <!-- 7. Positioning Tips -->
   <h2>Positioning Tips</h2>
