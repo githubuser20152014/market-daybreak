@@ -106,7 +106,7 @@ def arrow(val) -> str:
 # Claude narrative generation
 # ---------------------------------------------------------------------------
 
-def call_claude(market_rows: list[dict], api_key: str) -> dict:
+def call_claude(market_rows: list[dict], api_key: str, earnings: list[dict] | None = None) -> dict:
     """
     Call Claude Haiku to generate Morning Brief and Positioning Tips.
     Returns dict with 'morning_brief' and 'positioning_tips' keys.
@@ -118,15 +118,23 @@ def call_claude(market_rows: list[dict], api_key: str) -> dict:
         lines.append(f"  - {row['name']} ({row['symbol']}): {fmt_close(row['close'])} ({pct})")
     market_summary = "\n".join(lines)
 
+    # Optionally include today's earnings
+    earnings_block = ""
+    if earnings:
+        ev_lines = []
+        for e in earnings:
+            ev_lines.append(f"  - {e['symbol']}: EPS est {e['eps_str']}, Rev est {e['rev_str']} ({e['when']})")
+        earnings_block = "\nToday's earnings releases:\n" + "\n".join(ev_lines)
+
     prompt = f"""You are a concise financial analyst writing a pre-market briefing for serious US traders.
 
 Yesterday's market closes:
-{market_summary}
+{market_summary}{earnings_block}
 
 Write two sections:
 
 MORNING_BRIEF:
-A 3–4 sentence narrative summary of yesterday's market action. Mention the major moves, any notable divergences between US/Europe/Asia, and set the tone for today. Be factual and professional. Do not use bullet points.
+A 3–4 sentence narrative summary of yesterday's market action. Mention the major moves, any notable divergences between US/Europe/Asia, and set the tone for today. If earnings releases are provided, briefly note any notable ones to watch. Be factual and professional. Do not use bullet points.
 
 POSITIONING_TIPS:
 A markdown table with exactly this header and 3–5 data rows:
@@ -316,7 +324,7 @@ def main():
     # Generate Claude narrative
     logger.info("Generating narrative with Claude Haiku...")
     try:
-        claude_out = call_claude(raw_rows, anthropic_key)
+        claude_out = call_claude(raw_rows, anthropic_key, earnings=day_ahead.get("earnings"))
         morning_brief = claude_out["morning_brief"]
         positioning_tips = claude_out["positioning_tips"]
     except Exception as e:
