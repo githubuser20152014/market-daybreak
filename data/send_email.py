@@ -51,8 +51,12 @@ def send_report(
     )
 
     client = sendgrid.SendGridAPIClient(api_key=sg_api_key)
-    response = client.send(message)
-    logger.info(
-        f"Email sent — HTTP {response.status_code} "
-        f"to: {', '.join(to_emails)}"
-    )
+    try:
+        response = client.send(message)
+        logger.info(
+            f"Email sent — HTTP {response.status_code} "
+            f"to: {', '.join(to_emails)}"
+        )
+    except Exception as e:
+        body = getattr(getattr(e, "body", None), "decode", lambda: str(e))()
+        raise RuntimeError(f"SendGrid {getattr(e, 'status_code', '')} — {body}") from e
